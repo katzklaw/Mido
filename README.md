@@ -29,8 +29,12 @@
 <img width="339" height="755" alt="Screenshot_268" src="https://github.com/user-attachments/assets/669a63f8-b150-41a9-85db-96b8b262b2a9" />
 Create reminders with natural language. Or jot something down fast on the go, and go back and edit the time and place details later. 
 
+
+
 <img width="341" height="757" alt="Screenshot_277" src="https://github.com/user-attachments/assets/0da4227f-1684-4f04-a306-4dc323ee72fb" />
 Make simple checklists. Pin a reminder or list directly to your notifications so you won't forget it!
+
+
 
 Make reminders that repeat. Make reminders that trigger when you arrive or leave to a place. Get a notification when it's time to leave based on current traffic conditions!
 
