@@ -10,7 +10,7 @@
 - Home screen widget: the same timeline as the app, scrollable, and check tasks off right in it; add tasks right from the widget, or open the app with a tap. shows the next two weeks, a next-up line instead of a title ("Leave for X in 39 mins"), and 6 colour themes with adjustable background opacity (some mentioned features premium)
 - Gives task suggestions for missed phone calls, and contextually from text messages, app notifications, and email. "Missed call from 111-222-3333, call them back?" and "Text from Sam: turn this into a task?" etc. All processed locally on your phone
 - Completion chime: a short happy ding when you check a task off (in the app or the widget); silent on silent/vibrate; can be turned off in Settings
-- Pinned countdown: while a drive is coming up, a "Leave for X" notification with a live countdown stays in your notifications. (optional)
+- Pinned countdown: while a drive is coming up, a "Leave for X" notification with a live countdown based on live traffic conditions stays in your notifications. (optional)
 - Next Up banner shows the next task or event, and the leave-by time when there is one
 - A simple habit tracker and associated widget
 
