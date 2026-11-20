@@ -1,15 +1,8 @@
 # Mido
 
-Open this folder in Android Studio (Ladybug or newer, JDK 17) and let Gradle sync. Run on a device or emulator (Android 8.0+).
+*my attempt at recreating the long defunct Midu todo app*
 
-## Setup for place lookup
-Add your Google Maps key to `local.properties` (Android Studio creates this file; it is not committed):
-
-    MAPS_API_KEY=your_key_here
-
-The key needs the **Places API (New)** and the **Routes API** enabled (Routes powers the live drive times). Without a key, Mido falls back to Android's built-in geocoder, which is less accurate for business names.
-
-## What works now
+## Features:
 - Timeline home screen: overdue, Today (with a "now" marker), future days, then Anytime
 - "Next up" banner at the top; List view as the secondary tab
 - Quick add with natural language ("take out trash every tue at 7pm", "pick up gym bag at Planet Fitness when I leave")
@@ -24,37 +17,20 @@ The key needs the **Places API (New)** and the **Routes API** enabled (Routes po
 - Month calendar: a third view next to Timeline and List. Month grid with dots, tap a day for its agenda; repeating tasks appear on their future dates; + adds to the selected day
 - Home screen widget: the same timeline as the app (line, nodes, now marker) in a smaller font, scrollable, check tasks off right in it; tapping the list opens the app, only the + opens the small floating add box (long-press the home screen, Widgets, Mido)
 - Reliable reminders: exact alarms that fire with the app closed, re-armed on boot, update and every ~15 min; a reliability check in Settings (battery, exact alarms, Samsung steps) with a test-reminder button; a warning strip while something could delay reminders; and a "Missed reminder" notification if one was swallowed
-- Suggestions (Settings): "Missed call from 111-222-3333, call them back?" and "Text from Sam: turn this into a task?" using notification access; processed on the phone only
+- Reminder suggestions: "Missed call from 111-222-3333, call them back?" and "Text from Sam: turn this into a task?" 
 - Completion chime: a short happy ding when you check a task off (in the app or the widget); silent on silent/vibrate; can be turned off in Settings
 - Widget: shows the next two weeks, a next-up line instead of a title ("Leave for X in 39 mins"), and 6 colour themes with adjustable background opacity (Settings)
-- Pinned countdown: while a drive is coming up, a "Leave for X" notification with a live countdown stays in your shade (foreground service); toggle in Settings
+- Pinned countdown: while a drive is coming up, a "Leave for X" notification with a live countdown stays in your shade 
 - Next Up banner shows the next task or event, and the leave-by time when there is one
-- Local Room database; no account needed
+- A simple habit tracker with widget.
 
-## Not built yet
-Two-way calendar sync, subtasks/lists, search, per-contact rules for text suggestions.
+<img width="345" height="759" alt="Screenshot_272" src="https://github.com/user-attachments/assets/3f5a9213-dcf6-4671-9770-b1c4c897109f" /> <img width="344" height="756" alt="Screenshot_269" src="https://github.com/user-attachments/assets/350f6788-848d-4698-a102-f937a3fb07d9" /> <img width="342" height="763" alt="Screenshot_271" src="https://github.com/user-attachments/assets/c7efc8dd-bf4b-4b73-8259-6408b5502b93" />
 
-## Tests
-Parser, timeline, leave-by planner, calendar-event and edit unit tests live in app/src/test (`./gradlew test`).
+<img width="339" height="755" alt="Screenshot_268" src="https://github.com/user-attachments/assets/669a63f8-b150-41a9-85db-96b8b262b2a9" />
+Create reminders with natural language. Or jot something down fast on the go, and go back and edit the time and place details later. 
 
-## Where things are
-- Settings (gear icon): leave-by buffer, calendar write-back, reliability check, suggestions.
-- If the build complains about a missing Gradle wrapper, let Android Studio regenerate it.
+<img width="341" height="757" alt="Screenshot_277" src="https://github.com/user-attachments/assets/0da4227f-1684-4f04-a306-4dc323ee72fb" />
+Make simple checklists. Pin a reminder or list directly to your notifications so you won't forget it!
 
-## Persistent alerts (phase 8)
-Settings → "Keep alerting until I respond" (on by default). A reminder rings on an alarm-tone channel and re-alerts every
-1/2/5/10 minutes until you tap Done or Snooze (or complete/delete the task elsewhere). It gives up after about an hour.
-Logic: `NagPolicy` (pure), `NagScheduler` (chained exact alarms), `NagReceiver`, `ReminderAlert`.
-Do Not Disturb can still silence it unless you allow alarms/Mido through.
+Make reminders that repeat. Make reminders that trigger when you arrive or leave to a place. Get a notification when it's time to leave based on current traffic conditions!
 
-## Mido Pro (phase 9b)
-Free: quick add, repeats, timeline/list/calendar, reminders, persistent alerts, read-only calendar, 14-day widget in Black or Light,
-missed-call suggestions, 5 text-to-task suggestions. Pro: live-traffic leave-by + pinned countdown, arrive/leave place reminders,
-add-to-Google-Calendar, widget colours and opacity, unlimited text-to-task.
-
-Everything asks `Entitlements.isPro(context)` (app/.../pro). It is true when `PRO_UNLOCKED=true` is in local.properties
-(your own build) or a valid licence key was entered in Settings → Mido Pro. Play Billing can later become a second source there.
-
-Making keys (needs only a JDK):
-1. `java tools/KeyTool.java init` (one time). Keep `mido-private.key` secret and backed up. Paste the printed public key into `pro/ProKeys.kt`.
-2. `java tools/KeyTool.java make "Customer Name"` prints a key to send them. `check <key>` verifies one.
