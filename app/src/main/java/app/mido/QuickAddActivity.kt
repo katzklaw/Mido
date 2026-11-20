@@ -18,6 +18,7 @@ class QuickAddActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val prefill = intent.getStringExtra(EXTRA_TEXT).orEmpty()
+        app.mido.ui.theme.ThemeState.load(this)
         setContent {
             MidoTheme {
                 QuickAddSheet(

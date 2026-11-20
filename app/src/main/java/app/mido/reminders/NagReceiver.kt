@@ -21,6 +21,9 @@ class NagReceiver : BroadcastReceiver() {
                 val task = AppDatabase.get(context).taskDao().getById(id)
                 val settings = AppSettings(context)
                 if (task == null || task.completed || !settings.persistentAlerts) return@launch
+                // Snoozed while this repeat was already on its way: stay quiet until the snooze ends.
+                val snoozed = task.snoozedUntil
+                if (snoozed != null && snoozed > System.currentTimeMillis()) return@launch
                 // An "every time" place reminder that was checked off since it fired is answered.
                 val doneAt = task.lastLocationDoneAt
                 if (task.locationRepeat && doneAt != null && doneAt >= (task.lastLocationFiredAt ?: 0L)) {

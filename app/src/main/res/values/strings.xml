@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mido</string>
+    <string name="habit_widget_description">Your habits for the week, with a box for each day</string>
     <string name="widget_description">Your next tasks and events, with a quick-add button</string>
 </resources>

@@ -26,6 +26,11 @@ class AppSettings(context: Context) {
         get() = prefs.getBoolean(KEY_TEXTS, true)
         set(v) = prefs.edit().putBoolean(KEY_TEXTS, v).apply()
 
+    /** Offer to turn an email that asks you to do something into a task. */
+    var suggestFromEmail: Boolean
+        get() = prefs.getBoolean(KEY_EMAIL, true)
+        set(v) = prefs.edit().putBoolean(KEY_EMAIL, v).apply()
+
     /** Play a short chime when a task is checked off. */
     var chimeEnabled: Boolean
         get() = prefs.getBoolean(KEY_CHIME, true)
@@ -35,6 +40,11 @@ class AppSettings(context: Context) {
     var widgetTheme: WidgetTheme
         get() = WidgetTheme.fromName(prefs.getString(KEY_WIDGET_THEME, null))
         set(v) = prefs.edit().putString(KEY_WIDGET_THEME, v.name).apply()
+
+    /** Also use the chosen colour theme inside the app (otherwise the app follows the phone's light/dark mode). */
+    var appUsesTheme: Boolean
+        get() = prefs.getBoolean(KEY_APP_THEME, false)
+        set(v) = prefs.edit().putBoolean(KEY_APP_THEME, v).apply()
 
     /** How solid the widget background is, in percent (100 = fully opaque). */
     var widgetOpacity: Int
@@ -87,6 +97,7 @@ class AppSettings(context: Context) {
         const val KEY_CALENDAR = "sync_calendar_id"
         const val KEY_CALLBACKS = "suggest_callbacks"
         const val KEY_TEXTS = "suggest_texts"
+        const val KEY_EMAIL = "suggest_email"
         const val KEY_CHIME = "chime_enabled"
         const val KEY_WIDGET_THEME = "widget_theme"
         const val KEY_WIDGET_OPACITY = "widget_opacity"
@@ -94,6 +105,7 @@ class AppSettings(context: Context) {
         const val KEY_RECENT = "recent_notifications"
         const val KEY_LOUD_LEAVE = "loud_leave_alert"
         const val KEY_TEXT_USED = "text_suggestions_used"
+        const val KEY_APP_THEME = "app_uses_theme"
         const val KEY_PIN = "pin_countdown"
         const val KEY_PERSIST = "persistent_alerts"
         const val KEY_NAG = "nag_interval_min"

@@ -32,6 +32,14 @@ data class TaskEntity(
     val lastLocationFiredAt: Long? = null,
     /** When a repeating place reminder was last checked off; it resets at the next firing. */
     val lastLocationDoneAt: Long? = null,
+    /** For "when I leave" reminders: when you were last seen inside the place. Leaving only counts after this. */
+    val placeEnteredAt: Long? = null,
+    /** Set when a reminder is snoozed, so the snooze survives re-arming and reboots. Cleared when it fires. */
+    val snoozedUntil: Long? = null,
+    /** Pinned undated tasks sit at the top of Today's list every day until done. */
+    @ColumnInfo(defaultValue = "0") val pinned: Boolean = false,
+    /** Kept in the notification shade (hard to swipe away) until done or unpinned. */
+    @ColumnInfo(defaultValue = "0") val shadePinned: Boolean = false,
     val completed: Boolean = false,
     val completedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),

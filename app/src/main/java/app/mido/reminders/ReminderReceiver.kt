@@ -24,7 +24,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 val task = dao.getById(id)
                 if (task != null && !task.completed) {
                     ReminderAlert.fire(context, task)
-                    dao.update(task.copy(notifiedAt = System.currentTimeMillis()))
+                    dao.update(task.copy(notifiedAt = System.currentTimeMillis(), snoozedUntil = null))
                 }
             } finally {
                 pending.finish()

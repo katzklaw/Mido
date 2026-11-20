@@ -82,6 +82,17 @@ class LeaveCountdownService : Service() {
         val leg = LegIntent.read(intent)
         val now = System.currentTimeMillis()
         if (leg == null || leg.startMs <= now) {
+            // Android crashes the app if a service started with startForegroundService() never calls
+            // startForeground(), so show a placeholder for an instant before stopping.
+            val placeholder = androidx.core.app.NotificationCompat.Builder(this, Notifications.CHANNEL_COUNTDOWN)
+                .setSmallIcon(android.R.drawable.ic_menu_directions)
+                .setContentTitle("Mido")
+                .build()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(LeaveCountdown.NOTIFICATION_ID, placeholder, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } else {
+                startForeground(LeaveCountdown.NOTIFICATION_ID, placeholder)
+            }
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY

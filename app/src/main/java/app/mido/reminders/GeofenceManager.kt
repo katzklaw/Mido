@@ -34,9 +34,10 @@ class GeofenceManager(context: Context) : ReminderGateway {
             PackageManager.PERMISSION_GRANTED
         ) return
 
+        // "When I leave" also listens for entering: leaving only counts if you were seen inside first.
         val transition = when (trigger) {
             LocationTrigger.ARRIVE -> Geofence.GEOFENCE_TRANSITION_ENTER
-            LocationTrigger.LEAVE -> Geofence.GEOFENCE_TRANSITION_EXIT
+            LocationTrigger.LEAVE -> Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT
         }
         val fence = Geofence.Builder()
             .setRequestId(task.id.toString())
@@ -44,8 +45,10 @@ class GeofenceManager(context: Context) : ReminderGateway {
             .setExpirationDuration(Geofence.NEVER_EXPIRE)
             .setTransitionTypes(transition)
             .build()
-        // Initial trigger 0: don't fire just because you're already standing inside the fence.
-        val request = GeofencingRequest.Builder().setInitialTrigger(0).addGeofence(fence).build()
+        // Arrive: don't fire just because you're already standing inside the fence. Leave: if you're inside when
+        // it's set up, report that (quietly) so the later exit counts.
+        val initial = if (trigger == LocationTrigger.LEAVE) GeofencingRequest.INITIAL_TRIGGER_ENTER else 0
+        val request = GeofencingRequest.Builder().setInitialTrigger(initial).addGeofence(fence).build()
         try {
             client.addGeofences(request, pendingIntent())
         } catch (e: SecurityException) {

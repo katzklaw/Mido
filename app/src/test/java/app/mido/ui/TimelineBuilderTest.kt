@@ -27,6 +27,7 @@ class TimelineBuilderTest {
             is TimelineEntry.Item -> "T:${it.task.id}${if (it.overdue) "!" else ""}"
             is TimelineEntry.Event -> "E:${it.event.id}"
             is TimelineEntry.Drive -> "D:${it.leg.eventKey.substringBefore('@')}"
+            is TimelineEntry.Habit -> "B:${it.day.habit.name}"
             is TimelineEntry.Now -> "NOW"
         }
     }
@@ -116,5 +117,29 @@ class TimelineBuilderTest {
         assertEquals("ev7", next.title)
         assertEquals(leg, next.leave)
         assertEquals(90L, next.minutesAway)
+    }
+
+    @Test fun pinnedUndatedTasksSitAtTopOfToday() {
+        val pinned = task(5, null).copy(pinned = true)
+        val out = TimelineBuilder.build(
+            listOf(task(1, now.minusHours(2)), task(2, now.plusHours(3)), pinned, task(6, null)), now, zone,
+        )
+        assertEquals(listOf("H:Today", "T:5", "T:1", "NOW", "T:2", "H:Anytime", "T:6"), shape(out))
+    }
+
+    @Test fun pinnedTaskAppearsOnTodayEvenWithNothingElse() {
+        val out = TimelineBuilder.build(listOf(task(5, null).copy(pinned = true)), now, zone)
+        assertEquals(listOf("H:Today", "T:5", "NOW"), shape(out))
+    }
+
+    @Test fun completedPinnedTaskStopsBeingPinned() {
+        val done = task(5, null, completed = true, completedAt = now.minusHours(1)).copy(pinned = true)
+        val out = TimelineBuilder.build(listOf(done), now, zone)
+        assertEquals(listOf("H:Today", "NOW", "H:Anytime", "T:5"), shape(out))
+    }
+
+    @Test fun widgetTimelineIncludesPinnedTasks() {
+        val out = WidgetTimeline.build(listOf(task(5, null).copy(pinned = true), task(6, null)), emptyList(), emptyList(), now, zone)
+        assertEquals(listOf("H:Today", "T:5", "NOW"), shape(out))
     }
 }

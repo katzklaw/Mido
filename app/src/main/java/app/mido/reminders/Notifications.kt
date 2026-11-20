@@ -18,6 +18,7 @@ import app.mido.ui.Fmt
 
 object Notifications {
     const val CHANNEL_REMINDERS = "reminders"
+    const val CHANNEL_PINNED = "pinned_notes"
     const val CHANNEL_COUNTDOWN = "countdown"
     const val CHANNEL_SUGGESTIONS = "suggestions"
     /** Alarm-style channel used while "keep alerting until I respond" is on. */
@@ -44,6 +45,12 @@ object Notifications {
         )
         nm.createNotificationChannel(
             alarmChannel(CHANNEL_LEAVE, "Time to leave", "A loud alarm-tone alert when it's time to leave for an event"),
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_PINNED, "Pinned tasks and lists", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Tasks and checklists you keep in the notification shade"
+                setShowBadge(false)
+            },
         )
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL_COUNTDOWN, "Leave-by countdown", NotificationManager.IMPORTANCE_LOW).apply {
@@ -104,6 +111,11 @@ object Notifications {
                 0,
                 "Snooze ${SNOOZE_MINUTES}m",
                 actionIntent(context, task.id, NotificationActionReceiver.ACTION_SNOOZE),
+            )
+            .addAction(
+                0,
+                "Snooze 1h",
+                actionIntent(context, task.id, NotificationActionReceiver.ACTION_SNOOZE_HOUR),
             )
             .build()
 

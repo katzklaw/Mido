@@ -20,7 +20,7 @@ object MissedSweep {
             val at = ReminderTime.triggerAt(task) ?: continue
             val whenText = Fmt.time(Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault()).toLocalDateTime())
             Notifications.showReminder(context, task, "Missed reminder, it was due $whenText")
-            dao.update(task.copy(notifiedAt = now))
+            dao.update(task.copy(notifiedAt = now, snoozedUntil = null))
         }
     }
 }

@@ -18,6 +18,8 @@ object TaskEdit {
         zone: ZoneId = ZoneId.systemDefault(),
         today: LocalDate = LocalDate.now(zone),
         everyTime: Boolean = false,
+        pinned: Boolean = false,
+        shadePinned: Boolean = false,
     ): TaskEntity {
         // A repeating task needs a date to repeat from.
         val day = date ?: if (repeat != null) today else null
@@ -34,6 +36,8 @@ object TaskEdit {
             locationName = placeName,
             locationTrigger = if (placeName != null) trigger?.name else null,
             locationRepeat = placeName != null && trigger != null && everyTime,
+            pinned = pinned && dueAt == null,
+            shadePinned = shadePinned,
         )
     }
 }

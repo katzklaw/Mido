@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,6 +44,8 @@ fun TimelineScreen(
     onToggle: (TaskEntity) -> Unit,
     onDelete: (TaskEntity) -> Unit,
     onEdit: (TaskEntity) -> Unit,
+    onPin: ((TaskEntity) -> Unit)? = null,
+    onToggleHabit: (Long, Long) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -52,9 +55,10 @@ fun TimelineScreen(
         items(entries, key = { it.key }) { entry ->
             when (entry) {
                 is TimelineEntry.Header -> HeaderRow(entry)
-                is TimelineEntry.Item -> ItemRow(entry, now, onToggle, onDelete, onEdit)
+                is TimelineEntry.Item -> ItemRow(entry, now, onToggle, onDelete, onEdit, onPin)
                 is TimelineEntry.Event -> EventRow(entry, now)
                 is TimelineEntry.Drive -> DriveRow(entry)
+                is TimelineEntry.Habit -> HabitRow(entry, onToggleHabit)
                 is TimelineEntry.Now -> NowRow(entry)
             }
         }
@@ -110,6 +114,7 @@ private fun ItemRow(
     onToggle: (TaskEntity) -> Unit,
     onDelete: (TaskEntity) -> Unit,
     onEdit: (TaskEntity) -> Unit,
+    onPin: ((TaskEntity) -> Unit)? = null,
 ) {
     val task = entry.task
     val due = TimelineBuilder.dueOf(task)
@@ -145,7 +150,40 @@ private fun ItemRow(
                 onToggle = { onToggle(task) },
                 onDelete = { onDelete(task) },
                 onEdit = { onEdit(task) },
+                onPin = onPin?.let { pin -> { pin(task) } },
             )
+        }
+    }
+}
+
+@Composable
+private fun HabitRow(entry: TimelineEntry.Habit, onToggleHabit: (Long, Long) -> Unit) {
+    val day = entry.day
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+        Box(Modifier.width(TimeColumnWidth).padding(top = 17.dp, end = 6.dp), contentAlignment = Alignment.TopEnd) {
+            Text("Habit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        LineColumn(nodeColor = MaterialTheme.colorScheme.tertiary, hollow = !day.checked)
+        Box(Modifier.weight(1f).padding(end = 12.dp, bottom = 10.dp)) {
+            Card(
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            ) {
+                Row(Modifier.padding(horizontal = 6.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = day.checked,
+                        enabled = day.canCheck,
+                        onCheckedChange = { onToggleHabit(day.habit.id, day.date.toEpochDay()) },
+                    )
+                    Column(Modifier.weight(1f)) {
+                        Text(day.habit.name, style = MaterialTheme.typography.bodyLarge)
+                        day.note?.let {
+                            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
         }
     }
 }

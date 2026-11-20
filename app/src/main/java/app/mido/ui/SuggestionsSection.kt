@@ -40,6 +40,7 @@ fun SuggestionsSection() {
     var access by remember { mutableStateOf(MidoNotificationListener.isEnabled(context)) }
     var callbacks by remember { mutableStateOf(settings.suggestCallbacks) }
     var texts by remember { mutableStateOf(settings.suggestFromTexts) }
+    var emails by remember { mutableStateOf(settings.suggestFromEmail) }
     var contacts by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
     }
@@ -78,10 +79,11 @@ fun SuggestionsSection() {
 
         ToggleRow("Missed calls: offer to call back", callbacks) { callbacks = it; settings.suggestCallbacks = it }
         ToggleRow("Texts: offer to make a task", texts) { texts = it; settings.suggestFromTexts = it }
+        ToggleRow("Email: offer to make a task", emails) { emails = it; settings.suggestFromEmail = it }
 
         Text(
-            if (lastText.isBlank()) "Last text Mido saw: none yet. Texts that start with a request (\"call me\", \"can you buy milk?\") get a suggestion."
-            else "Last text Mido saw: $lastText",
+            if (lastText.isBlank()) "Last text or email Mido saw: none yet. Texts that start with a request (\"call me\", \"can you buy milk?\") and emails like \"Reminder: ...\" get a suggestion."
+            else "Last text or email Mido saw: $lastText",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -89,7 +91,7 @@ fun SuggestionsSection() {
         if (!app.mido.pro.Entitlements.isPro(context)) {
             Text(
                 "Free: ${app.mido.pro.ProPolicy.freeTextSuggestionsLeft(settings.textSuggestionsUsed)} of " +
-                    "${app.mido.pro.ProPolicy.FREE_TEXT_SUGGESTIONS} text-to-task suggestions left. Missed-call suggestions are always free.",
+                    "${app.mido.pro.ProPolicy.FREE_TEXT_SUGGESTIONS} text and email suggestions left. Missed-call suggestions are always free.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

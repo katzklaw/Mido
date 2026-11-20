@@ -39,8 +39,15 @@ class MidoNotificationListener : NotificationListenerService() {
         // only post the summary, so those are read too; duplicates are filtered by sender and text.
         if (isSummary && !messaging) return
 
+        val email = n.category == Notification.CATEGORY_EMAIL || sbn.packageName in EMAIL_APPS
+
         when {
             settings.suggestCallbacks && isMissedCall(sbn, n, title, text) -> onMissedCall(sbn, title, text, extras)
+            settings.suggestFromEmail && email && !isSummary -> {
+                val big = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim()
+                val subject = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim()
+                onEmail(sbn, title, subject, big?.takeIf { it != subject })
+            }
             settings.suggestFromTexts && messaging ->
                 onMessage(sbn, title, latestMessageText(extras) ?: text)
         }
@@ -67,20 +74,21 @@ class MidoNotificationListener : NotificationListenerService() {
         val dialNumber = number ?: name?.let { ContactLookup.numberForName(this, it) }
         val label = name ?: number?.let { PhoneNumbers.pretty(it) } ?: "a missed call"
 
-        val actions = mutableListOf<Pair<String, PendingIntent>>()
+        val nid = 3_000_000 + (sbn.key.hashCode() and 0xFFFFF)
+        val taskTitle = "Call $label back"
+        val taskNotes = dialNumber?.let { "Phone: ${PhoneNumbers.pretty(it)}" } ?: ""
         val dial = Intent(Intent.ACTION_DIAL, dialNumber?.let { Uri.fromParts("tel", it.filter { c -> c.isDigit() || c == '+' }, null) } ?: Uri.parse("tel:"))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        actions += "Call back" to PendingIntent.getActivity(this, sbn.key.hashCode(), dial, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        actions += "Remind me in 1h" to SuggestionReceiver.pending(
-            this, SuggestionReceiver.ACTION_CALLBACK_TASK, sbn.key.hashCode() + 1,
-            SuggestionReceiver.EXTRA_TITLE to "Call $label back",
-            SuggestionReceiver.EXTRA_NOTES to (dialNumber?.let { "Phone: ${PhoneNumbers.pretty(it)}" } ?: ""),
+        val actions = listOf(
+            "Make task" to SuggestionReceiver.makeTask(this, sbn.key.hashCode() + 1, taskTitle, taskNotes, nid, plain = true),
+            "Dismiss" to SuggestionReceiver.dismiss(this, sbn.key.hashCode() + 6, nid),
+            "Call back" to PendingIntent.getActivity(this, sbn.key.hashCode(), dial, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT),
         )
 
         Notifications.showSuggestion(
-            this, 3_000_000 + (sbn.key.hashCode() and 0xFFFFF),
+            this, nid,
             "Missed call from $label",
-            "Do you want to call them back?",
+            "Turn this into a task?\n“$taskTitle”",
             android.R.drawable.sym_call_missed,
             actions,
         )
@@ -101,28 +109,46 @@ class MidoNotificationListener : NotificationListenerService() {
         val who = sender?.takeIf { it.isNotBlank() } ?: "a text"
         val notes = "From $who: “${message.take(200)}”"
 
-        val edit = PendingIntent.getActivity(
-            this, sbn.key.hashCode() + 2,
-            Intent(this, QuickAddActivity::class.java)
-                .putExtra(QuickAddActivity.EXTRA_TEXT, suggestion)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        val nid = 4_000_000 + (sbn.key.hashCode() and 0xFFFFF)
         val actions = listOf(
-            "Add task" to SuggestionReceiver.pending(
-                this, SuggestionReceiver.ACTION_ADD_TASK, sbn.key.hashCode() + 3,
-                SuggestionReceiver.EXTRA_TITLE to suggestion,
-                SuggestionReceiver.EXTRA_NOTES to notes,
-            ),
-            "Edit first" to edit,
+            "Make task" to SuggestionReceiver.makeTask(this, sbn.key.hashCode() + 3, suggestion, notes, nid),
+            "Dismiss" to SuggestionReceiver.dismiss(this, sbn.key.hashCode() + 7, nid),
         )
         Notifications.showSuggestion(
-            this, 4_000_000 + (sbn.key.hashCode() and 0xFFFFF),
+            this, nid,
             "Text from $who",
             "Turn this into a task?\n“$suggestion”",
             android.R.drawable.ic_menu_agenda,
             actions,
-            contentIntent = edit,
+        )
+    }
+
+    // ---- email -------------------------------------------------------------------------------
+
+    /** Email notifications show the sender, the subject and a line of preview; that is all Mido reads. */
+    private fun onEmail(sbn: StatusBarNotification, sender: String?, subject: String?, preview: String?) {
+        if (!firstTime("mail:${sbn.packageName}:$sender:$subject")) return
+        val suggestion = EmailTaskExtractor.suggest(sender, subject, preview)
+        val settings = AppSettings(this)
+        settings.lastTextSeen = "email from ${sender ?: "?"}: “${(subject ?: "").take(50)}” → " +
+            (suggestion?.let { "suggested “$it”" } ?: "didn't read as a to-do")
+        if (suggestion == null) return
+        if (!app.mido.pro.ProPolicy.textSuggestionAllowed(settings.textSuggestionsUsed, app.mido.pro.Entitlements.isPro(this))) return
+        settings.textSuggestionsUsed = settings.textSuggestionsUsed + 1
+        val who = sender?.takeIf { it.isNotBlank() } ?: "an email"
+        val notes = "Email from $who" + (subject?.takeIf { it.isNotBlank() }?.let { ": “${it.take(150)}”" } ?: "")
+
+        val nid = 5_000_000 + (sbn.key.hashCode() and 0xFFFFF)
+        val actions = listOf(
+            "Make task" to SuggestionReceiver.makeTask(this, sbn.key.hashCode() + 5, suggestion, notes, nid),
+            "Dismiss" to SuggestionReceiver.dismiss(this, sbn.key.hashCode() + 8, nid),
+        )
+        Notifications.showSuggestion(
+            this, nid,
+            "Email from $who",
+            "Turn this into a task?\n“$suggestion”",
+            android.R.drawable.ic_dialog_email,
+            actions,
         )
     }
 
@@ -146,6 +172,11 @@ class MidoNotificationListener : NotificationListenerService() {
         val DIALER_APPS = setOf(
             "com.google.android.dialer", "com.samsung.android.incallui", "com.samsung.android.dialer",
             "com.android.server.telecom", "com.android.dialer", "com.android.phone",
+        )
+        val EMAIL_APPS = setOf(
+            "com.google.android.gm", "com.google.android.gm.lite", "com.samsung.android.email.provider",
+            "com.microsoft.office.outlook", "com.yahoo.mobile.client.android.mail", "ch.protonmail.android",
+            "com.fsck.k9", "com.fsck.k9.material", "me.bluemail.mail", "com.my.mail", "com.readdle.spark",
         )
         val MESSAGING_APPS = setOf(
             "com.google.android.apps.messaging", "com.samsung.android.messaging", "com.android.mms",

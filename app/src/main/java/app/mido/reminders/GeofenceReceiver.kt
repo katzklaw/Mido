@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import app.mido.data.AppDatabase
+import app.mido.data.parsedTrigger
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import kotlinx.coroutines.CoroutineScope
@@ -26,14 +27,23 @@ class GeofenceReceiver : BroadcastReceiver() {
             try {
                 val dao = AppDatabase.get(context).taskDao()
                 for (id in ids) {
-                    val task = dao.getById(id) ?: continue
-                    if (task.completed) continue
+                    val stored = dao.getById(id) ?: continue
+                    if (stored.completed) continue
+                    var task = stored
                     val now = System.currentTimeMillis()
+                    val trigger = task.parsedTrigger ?: continue
+                    val decision = GeofenceRules.decide(trigger, arrived, task.dueAt, task.placeEnteredAt, now)
+                    if (decision.placeEnteredAt != task.placeEnteredAt) {
+                        task = task.copy(placeEnteredAt = decision.placeEnteredAt)
+                        dao.update(task)
+                    }
+                    if (decision.action != GeofenceRules.Action.ALERT) continue
                     if (task.locationRepeat) {
                         // Ignore GPS wobble: a place reminder can't fire again within 30 minutes.
                         val last = task.lastLocationFiredAt
                         if (last != null && now - last < REPEAT_COOLDOWN_MS) continue
-                        dao.update(task.copy(lastLocationFiredAt = now))
+                        task = task.copy(lastLocationFiredAt = now)
+                        dao.update(task)
                     }
                     val place = task.locationName ?: "your location"
                     val text = if (arrived) "You arrived at $place" else "You left $place"

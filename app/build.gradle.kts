@@ -21,8 +21,8 @@ android {
         applicationId = "app.mido"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.6"
+        versionCode = 22
+        versionName = "0.11.6"
         // Developer switch: PRO_UNLOCKED=true in local.properties unlocks every Pro feature in your own build.
         buildConfigField("boolean", "PRO_UNLOCKED", localProps.getProperty("PRO_UNLOCKED", "false").trim().lowercase().let { if (it == "true") "true" else "false" })
         buildConfigField("String", "MAPS_API_KEY", "\"${localProps.getProperty("MAPS_API_KEY", "")}\"")

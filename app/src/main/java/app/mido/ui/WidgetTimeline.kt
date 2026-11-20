@@ -23,7 +23,8 @@ object WidgetTimeline {
         fun dateOf(ms: Long) = Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
 
         // Undated ("Anytime") tasks have no place on a calendar-style overview, so they stay in the app.
-        val inRange = tasks.filter { t -> t.dueAt?.let { !dateOf(it).isAfter(last) } == true }
+        // Pinned undated tasks are the exception: they belong at the top of Today.
+        val inRange = tasks.filter { t -> (t.pinned && t.dueAt == null) || t.dueAt?.let { !dateOf(it).isAfter(last) } == true }
         val eventsInRange = events.filter { !it.startDate(zone).isAfter(last) }
         val drivesInRange = drives.filter { !dateOf(it.leaveByMs).isAfter(last) }
         return TimelineBuilder.build(inRange, now, zone, eventsInRange, drivesInRange)

@@ -13,11 +13,13 @@ object Reminders {
             override fun schedule(task: TaskEntity) {
                 alarms.schedule(task)
                 fences.schedule(task)
+                PinnedNotes.sync(context, task)
             }
 
             override fun cancel(taskId: Long) {
                 alarms.cancel(taskId)
                 fences.cancel(taskId)
+                PinnedNotes.cancel(context, taskId)
             }
         }
     }

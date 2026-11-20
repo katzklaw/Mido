@@ -1,5 +1,14 @@
 # Mido
 
+Open this folder in Android Studio (Ladybug or newer, JDK 17) and let Gradle sync. Run on a device or emulator (Android 8.0+).
+
+## Setup for place lookup
+Add your Google Maps key to `local.properties` (Android Studio creates this file; it is not committed):
+
+    MAPS_API_KEY=your_key_here
+
+The key needs the **Places API (New)** and the **Routes API** enabled (Routes powers the live drive times). Without a key, Mido falls back to Android's built-in geocoder, which is less accurate for business names.
+
 ## What works now
 - Timeline home screen: overdue, Today (with a "now" marker), future days, then Anytime
 - "Next up" banner at the top; List view as the secondary tab
@@ -21,8 +30,31 @@
 - Pinned countdown: while a drive is coming up, a "Leave for X" notification with a live countdown stays in your shade (foreground service); toggle in Settings
 - Next Up banner shows the next task or event, and the leave-by time when there is one
 - Local Room database; no account needed
+
+## Not built yet
 Two-way calendar sync, subtasks/lists, search, per-contact rules for text suggestions.
 
+## Tests
+Parser, timeline, leave-by planner, calendar-event and edit unit tests live in app/src/test (`./gradlew test`).
 
+## Where things are
+- Settings (gear icon): leave-by buffer, calendar write-back, reliability check, suggestions.
+- If the build complains about a missing Gradle wrapper, let Android Studio regenerate it.
 
+## Persistent alerts (phase 8)
+Settings → "Keep alerting until I respond" (on by default). A reminder rings on an alarm-tone channel and re-alerts every
+1/2/5/10 minutes until you tap Done or Snooze (or complete/delete the task elsewhere). It gives up after about an hour.
+Logic: `NagPolicy` (pure), `NagScheduler` (chained exact alarms), `NagReceiver`, `ReminderAlert`.
+Do Not Disturb can still silence it unless you allow alarms/Mido through.
 
+## Mido Pro (phase 9b)
+Free: quick add, repeats, timeline/list/calendar, reminders, persistent alerts, read-only calendar, 14-day widget in Black or Light,
+missed-call suggestions, 5 text-to-task suggestions. Pro: live-traffic leave-by + pinned countdown, arrive/leave place reminders,
+add-to-Google-Calendar, widget colours and opacity, unlimited text-to-task.
+
+Everything asks `Entitlements.isPro(context)` (app/.../pro). It is true when `PRO_UNLOCKED=true` is in local.properties
+(your own build) or a valid licence key was entered in Settings → Mido Pro. Play Billing can later become a second source there.
+
+Making keys (needs only a JDK):
+1. `java tools/KeyTool.java init` (one time). Keep `mido-private.key` secret and backed up. Paste the printed public key into `pro/ProKeys.kt`.
+2. `java tools/KeyTool.java make "Customer Name"` prints a key to send them. `check <key>` verifies one.

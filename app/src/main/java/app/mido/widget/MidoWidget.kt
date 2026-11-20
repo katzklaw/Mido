@@ -66,7 +66,7 @@ class MidoWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 /** The colours the widget draws with, from the chosen theme and background opacity. */
-private class Palette(theme: WidgetTheme, opacityPercent: Int) {
+internal class Palette(theme: WidgetTheme, opacityPercent: Int) {
     val background = ColorProvider(Color(theme.background).copy(alpha = opacityPercent / 100f))
     val backgroundSolid = ColorProvider(Color(theme.background))
     val text = ColorProvider(Color(theme.text))
@@ -101,8 +101,8 @@ class ToggleTaskAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         val id = parameters[TaskIdKey] ?: return
         val task = AppDatabase.get(context).taskDao().getById(id) ?: return
-        if (!task.completed) app.mido.Chime.playDone(context)
-        Reminders.repository(context).toggleComplete(task)
+        // Chime once the change is saved (not before), so what you hear matches what the widget will show.
+        Reminders.repository(context).toggleComplete(task, onSaved = { if (!task.completed) app.mido.Chime.playDone(context) })
         MidoWidget().update(context, glanceId)
     }
 }
@@ -228,6 +228,8 @@ private fun EntryRow(entry: TimelineEntry, p: Palette, openApp: Action) {
                 Box(GlanceModifier.fillMaxWidth().height(2.dp).background(p.accent)) {}
             }
         }
+
+        is TimelineEntry.Habit -> Unit // habits have their own widget
 
         is TimelineEntry.Item -> {
             val task = entry.task

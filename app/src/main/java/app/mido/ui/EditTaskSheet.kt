@@ -64,6 +64,7 @@ fun EditTaskSheet(
     val dueDateTime = TimelineBuilder.dueOf(task, zone)
     var title by remember { mutableStateOf(task.title) }
     var notes by remember { mutableStateOf(task.notes) }
+    var shadePinned by remember { mutableStateOf(task.shadePinned) }
     var date by remember { mutableStateOf(dueDateTime?.toLocalDate()) }
     var time by remember { mutableStateOf(if (task.allDay) null else dueDateTime?.toLocalTime()) }
     val repeatOptions = remember { RepeatPresets.optionsFor(task.parsedRepeat) }
@@ -71,6 +72,7 @@ fun EditTaskSheet(
     var place by remember { mutableStateOf(task.locationName.orEmpty()) }
     var trigger by remember { mutableStateOf(task.parsedTrigger) }
     var everyTime by remember { mutableStateOf(task.locationRepeat) }
+    var pinned by remember { mutableStateOf(task.pinned) }
 
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
@@ -94,9 +96,11 @@ fun EditTaskSheet(
                 singleLine = true, modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
-                value = notes, onValueChange = { notes = it }, label = { Text("Notes") },
+                value = notes, onValueChange = { notes = app.mido.data.Checklist.onEdit(notes, it) }, label = { Text("Notes") },
                 minLines = 2, modifier = Modifier.fillMaxWidth(),
+                supportingText = { Text("Start a line with [ ] for a checklist item. Enter adds the next one.") },
             )
+            TextButton(onClick = { notes = app.mido.data.Checklist.addItem(notes) }) { Text("☑ Add checklist item") }
 
             Text("When", style = MaterialTheme.typography.labelLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -163,6 +167,32 @@ fun EditTaskSheet(
                 }
             }
 
+            if (date == null && repeatOptions[repeatIndex].rule == null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("📌 Pin to Today", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Keeps this at the top of Today every day until you finish it. For things with no set day.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = pinned, onCheckedChange = { pinned = it })
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("🔔 Keep in notifications", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Shows this task and its checklist in the notification shade and puts it back if swiped away, until you finish or unpin it.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(checked = shadePinned, onCheckedChange = { shadePinned = it })
+            }
+
             Button(
                 onClick = {
                     onSave(
@@ -170,6 +200,8 @@ fun EditTaskSheet(
                             task, title, notes, date, time, repeatOptions[repeatIndex].rule,
                             place, trigger, zone,
                             everyTime = everyTime,
+                            pinned = pinned,
+                            shadePinned = shadePinned,
                         ),
                     )
                 },

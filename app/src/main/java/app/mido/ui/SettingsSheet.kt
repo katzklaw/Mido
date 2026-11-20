@@ -88,7 +88,11 @@ fun SettingsSheet(
             Text("Settings", style = MaterialTheme.typography.titleLarge)
 
             var pro by remember { mutableStateOf(app.mido.pro.Entitlements.isPro(context)) }
-            ProSection(onChanged = { pro = app.mido.pro.Entitlements.isPro(context); onRearm() })
+            ProSection(onChanged = {
+                pro = app.mido.pro.Entitlements.isPro(context)
+                app.mido.ui.theme.ThemeState.load(context)
+                onRearm()
+            })
 
             val appSettings = remember { app.mido.settings.AppSettings(context) }
             var chime by remember { mutableStateOf(appSettings.chimeEnabled) }
@@ -174,8 +178,8 @@ fun SettingsSheet(
             var widgetTheme by remember { mutableStateOf(appSettings.widgetTheme) }
             var widgetOpacity by remember { mutableStateOf(appSettings.widgetOpacity) }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Home screen widget", style = MaterialTheme.typography.titleSmall)
-                Text("Colour", style = MaterialTheme.typography.labelLarge)
+                Text("Colours", style = MaterialTheme.typography.titleSmall)
+                Text("Colour theme (widget, and the app if you turn it on below)", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WidgetTheme.entries.forEach { theme ->
                         FilterChip(
@@ -186,6 +190,7 @@ fun SettingsSheet(
                                 } else {
                                     widgetTheme = theme
                                     appSettings.widgetTheme = theme
+                                    app.mido.ui.theme.ThemeState.load(context)
                                     WidgetUpdater.refresh(context)
                                 }
                             },
@@ -193,7 +198,19 @@ fun SettingsSheet(
                         )
                     }
                 }
-                Text("Background opacity", style = MaterialTheme.typography.labelLarge)
+                var appTheme by remember { mutableStateOf(appSettings.appUsesTheme) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Use this colour in the app too", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = appTheme,
+                        onCheckedChange = {
+                            appTheme = it
+                            appSettings.appUsesTheme = it
+                            app.mido.ui.theme.ThemeState.load(context)
+                        },
+                    )
+                }
+                Text("Widget background opacity", style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     WidgetTheme.OPACITIES.forEach { pct ->
                         FilterChip(

@@ -11,6 +11,8 @@ object ReminderTime {
 
     fun triggerAt(task: TaskEntity, zone: ZoneId = ZoneId.systemDefault()): Long? {
         if (task.completed) return null
+        // A snoozed reminder rings at the snooze time, not at the original time.
+        task.snoozedUntil?.let { return it }
         val due = task.dueAt ?: return null
         if (!task.allDay) return due
         return Instant.ofEpochMilli(due).atZone(zone).toLocalDate()

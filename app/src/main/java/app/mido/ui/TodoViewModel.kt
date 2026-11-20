@@ -15,10 +15,15 @@ import app.mido.calendar.LeavePlanner
 import app.mido.calendar.RoutesTravelTime
 import app.mido.data.CalendarEvent
 import app.mido.data.CalendarMonth
+import app.mido.data.AppDatabase
+import app.mido.data.HabitEntity
+import app.mido.data.HabitRepository
+import app.mido.widget.HabitWidgetUpdater
 import app.mido.reminders.MissedSweep
 import app.mido.data.TaskEntity
 import app.mido.data.toEntity
 import app.mido.parser.ParsedTask
+import app.mido.parser.QuickAddParser
 import app.mido.reminders.Notifications
 import app.mido.reminders.Reminders
 import app.mido.settings.AppSettings
@@ -67,6 +72,39 @@ class TodoViewModel(private val app: Application) : AndroidViewModel(app) {
 
     val tasks: StateFlow<List<TaskEntity>> = repo.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val habitDao = AppDatabase.get(app).habitDao()
+    private val habitRepo = HabitRepository(habitDao)
+
+    val habits: StateFlow<List<HabitEntity>> = habitDao.observeHabits()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** habitId -> every day ticked (the table is tiny, so history just loads it all). */
+    val habitChecks: StateFlow<Map<Long, Set<Long>>> =
+        habitDao.observeChecksSince(0)
+            .map { list -> list.groupBy({ it.habitId }, { it.epochDay }).mapValues { it.value.toSet() } }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    fun toggleHabit(habitId: Long, epochDay: Long) {
+        viewModelScope.launch {
+            if (habitRepo.toggle(habitId, epochDay)) Chime.playDone(app)
+            HabitWidgetUpdater.refresh(app)
+        }
+    }
+
+    fun saveHabit(habit: HabitEntity) {
+        viewModelScope.launch {
+            if (habit.id == 0L) habitDao.insert(habit) else habitDao.update(habit)
+            HabitWidgetUpdater.refresh(app)
+        }
+    }
+
+    fun deleteHabit(habit: HabitEntity) {
+        viewModelScope.launch {
+            habitRepo.delete(habit.id)
+            HabitWidgetUpdater.refresh(app)
+        }
+    }
 
     val events: StateFlow<List<CalendarEvent>> = calendar.observe(refresh.map { })
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -147,10 +185,32 @@ class TodoViewModel(private val app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { repo.add(p.toEntity(notes)) }
     }
 
+    /** Pins or unpins an undated task to the top of Today. */
+    fun togglePin(task: TaskEntity) = update(task.copy(pinned = !task.pinned), task)
+
     fun toggle(task: TaskEntity) {
         // Checking something off (including a repeating task rolling forward) gets a chime; un-checking doesn't.
         if (!task.completed) Chime.playDone(app)
         viewModelScope.launch { repo.toggleComplete(task) }
+    }
+
+    /** Creates a task from an accepted suggestion and hands it back so its edit sheet can open. */
+    fun addFromSuggestion(title: String, notes: String, plain: Boolean, onCreated: (TaskEntity) -> Unit) {
+        viewModelScope.launch {
+            // A plain title (like "Call 555-123-4567 back") is kept as is, so numbers aren't mistaken for dates or times.
+            val parsed = if (plain) {
+                ParsedTask(title = title, due = null, allDay = false, repeat = null, locationName = null, locationTrigger = null)
+            } else {
+                QuickAddParser.parse(title, java.time.LocalDateTime.now())
+            }
+            val id = repo.add(parsed.toEntity(notes))
+            AppDatabase.get(app).taskDao().getById(id)?.let(onCreated)
+        }
+    }
+
+    /** Removes every finished task. */
+    fun clearCompleted() {
+        viewModelScope.launch { repo.clearCompleted() }
     }
 
     fun delete(task: TaskEntity) {

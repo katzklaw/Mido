@@ -27,6 +27,9 @@ import app.mido.data.parsedTrigger
 import app.mido.ui.theme.OverdueRed
 import java.time.LocalDateTime
 
+/** Lets a card save a change to its task (such as ticking a checklist line) without every screen passing it down. */
+val LocalTaskChange = androidx.compose.runtime.staticCompositionLocalOf<(TaskEntity, TaskEntity) -> Unit> { { _, _ -> } }
+
 @Composable
 fun TaskCard(
     task: TaskEntity,
@@ -34,6 +37,7 @@ fun TaskCard(
     onDelete: () -> Unit,
     onEdit: () -> Unit,
     modifier: Modifier = Modifier,
+    onPin: (() -> Unit)? = null,
     overdue: Boolean = false,
     showDue: Boolean = false,
     now: LocalDateTime = LocalDateTime.now(),
@@ -46,6 +50,9 @@ fun TaskCard(
         if (showDue) {
             TimelineBuilder.dueOf(task)?.let { add(Fmt.dueLabel(it, task.allDay, now.toLocalDate())) }
         }
+        if (task.pinned && !task.completed) add("📌 Pinned to Today")
+        if (task.shadePinned && !task.completed) add("🔔 In notifications")
+        app.mido.data.Checklist.progress(task.notes)?.let { add("☑ ${it.first}/${it.second}") }
         task.parsedRepeat?.let { add("🔁 ${it.describe()}") }
         task.locationName?.let { add("📍 ${Fmt.placeLabel(it, task.parsedTrigger, task.locationRepeat)}") }
         if (task.locationRepeat && task.lastLocationDoneAt != null &&
@@ -95,9 +102,32 @@ fun TaskCard(
                         Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (task.notes.isNotBlank()) {
-                        Text(task.notes, style = MaterialTheme.typography.bodyMedium)
+                        val change = LocalTaskChange.current
+                        app.mido.data.Checklist.parse(task.notes).forEachIndexed { index, line ->
+                            if (line.isItem) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(
+                                        checked = line.checked,
+                                        onCheckedChange = {
+                                            change(task.copy(notes = app.mido.data.Checklist.toggle(task.notes, index)), task)
+                                        },
+                                    )
+                                    Text(
+                                        line.text,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textDecoration = if (line.checked) TextDecoration.LineThrough else null,
+                                        color = if (line.checked) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
+                            } else {
+                                Text(line.text, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
                     }
                     Row {
+                        if (onPin != null && task.dueAt == null && !task.completed) {
+                            TextButton(onClick = onPin) { Text(if (task.pinned) "Unpin" else "📌 Pin to Today") }
+                        }
                         TextButton(onClick = onEdit) { Text("Edit") }
                         TextButton(onClick = onDelete) { Text("Delete") }
                     }

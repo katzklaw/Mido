@@ -2,6 +2,7 @@ package app.mido.ui
 
 import app.mido.calendar.DriveLeg
 import app.mido.data.CalendarEvent
+import app.mido.data.HabitDay
 import app.mido.data.TaskEntity
 import java.time.Duration
 import java.time.Instant
@@ -30,6 +31,11 @@ sealed interface TimelineEntry {
     /** "Leave by 4:25 PM" marker with the drive time. */
     data class Drive(val leg: DriveLeg) : TimelineEntry {
         override val key: String get() = "d-${leg.eventKey}"
+    }
+
+    /** A habit due on a day, with a checkbox for today. */
+    data class Habit(val day: HabitDay) : TimelineEntry {
+        override val key: String get() = "hb-${day.habit.id}-${day.date}"
     }
 
     /** The "you are here" marker inside today's section. */
@@ -67,6 +73,7 @@ object TimelineBuilder {
         zone: ZoneId = ZoneId.systemDefault(),
         events: List<CalendarEvent> = emptyList(),
         drives: List<DriveLeg> = emptyList(),
+        habitDays: List<HabitDay> = emptyList(),
     ): List<TimelineEntry> {
         val today = now.toLocalDate()
         val nowMs = now.atZone(zone).toInstant().toEpochMilli()
@@ -80,7 +87,10 @@ object TimelineBuilder {
         val overdueIds = overdue.map { it.id }.toSet()
 
         val dated = visible.filter { it.id !in overdueIds && dueOf(it, zone) != null }
-        val anytime = visible.filter { dueOf(it, zone) == null }
+        // Pinned undated tasks live at the top of Today, every day, until they're done.
+        val pinned = visible.filter { it.pinned && !it.completed && dueOf(it, zone) == null }.sortedBy { it.createdAt }
+        val pinnedIds = pinned.map { it.id }.toSet()
+        val anytime = visible.filter { dueOf(it, zone) == null && it.id !in pinnedIds }
 
         val rowsByDate = HashMap<LocalDate, MutableList<Row>>()
         fun add(date: LocalDate, row: Row) { rowsByDate.getOrPut(date) { mutableListOf() }.add(row) }
@@ -107,7 +117,8 @@ object TimelineBuilder {
             add(dateOf(leg.leaveByMs, zone), Row(1, leg.leaveByMs, 2, TimelineEntry.Drive(leg)))
         }
 
-        val dates = (rowsByDate.keys + today).sortedBy { it.toEpochDay() }
+        val habitsByDate = habitDays.groupBy { it.date }
+        val dates = (rowsByDate.keys + habitsByDate.keys + today).sortedBy { it.toEpochDay() }
         val out = mutableListOf<TimelineEntry>()
 
         if (overdue.isNotEmpty()) {
@@ -117,6 +128,8 @@ object TimelineBuilder {
 
         for (date in dates) {
             out += TimelineEntry.Header(dateLabel(date, today))
+            if (date == today) pinned.forEach { out += TimelineEntry.Item(it) }
+            habitsByDate[date]?.forEach { out += TimelineEntry.Habit(it) }
             val rows = (rowsByDate[date] ?: mutableListOf())
                 .sortedWith(compareBy<Row>({ it.group }, { it.at }, { it.order }))
 
