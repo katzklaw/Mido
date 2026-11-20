@@ -1,4 +1,4 @@
-<p align="center"># Mido ToDo App</p>
+<h1 align="center"> Mido ToDo App</p>
 
 ## Features:
 - Timeline home screen: overdue, Today (with a "now" marker), future days, then Anytime
