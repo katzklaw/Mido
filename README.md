@@ -28,16 +28,11 @@
   <img src="https://github.com/user-attachments/assets/3f5a9213-dcf6-4671-9770-b1c4c897109f" width="260" alt="Screen 1" />
   <img src="https://github.com/user-attachments/assets/350f6788-848d-4698-a102-f937a3fb07d9" width="260" alt="Screen 2" />
   <img src="https://github.com/user-attachments/assets/c7efc8dd-bf4b-4b73-8259-6408b5502b93" width="260" alt="Screen 3" />
-<br>
-
-<img width="260" alt="Screenshot_268" src="https://github.com/user-attachments/assets/669a63f8-b150-41a9-85db-96b8b262b2a9" /><br>
-Create reminders with natural language. Or jot something down fast on the go, and go back and edit the time and place details later. 
-<br>
-
-
-<img width="260" alt="Screenshot_277" src="https://github.com/user-attachments/assets/0da4227f-1684-4f04-a306-4dc323ee72fb" /><br>
-Make simple checklists. Pin a reminder or list directly to your notifications so you won't forget it!
-<br>
-
-Make reminders that repeat. Make reminders that trigger when you arrive or leave to a place. Get a notification when it's time to leave based on current traffic conditions!
 </p>
+<br>
+<p align="center">
+<img width="260" alt="Screenshot_268" src="https://github.com/user-attachments/assets/669a63f8-b150-41a9-85db-96b8b262b2a9" />
+<img width="260" alt="Screenshot_277" src="https://github.com/user-attachments/assets/0da4227f-1684-4f04-a306-4dc323ee72fb" />
+</p><br>
+
+Make simple checklists. Pin a reminder or list directly to your notifications so you won't forget it! Make reminders that repeat. Make reminders that trigger when you arrive or leave to a place. Get a notification when it's time to leave based on current traffic conditions!
