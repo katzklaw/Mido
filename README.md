@@ -56,5 +56,5 @@ Everything asks `Entitlements.isPro(context)` (app/.../pro). It is true when `PR
 (your own build) or a valid licence key was entered in Settings → Mido Pro. Play Billing can later become a second source there.
 
 Making keys (needs only a JDK):
-1. `java tools/KeyTool.java init` (one time). Keep `mido-private.key` secret and backed up. Paste the printed public key into `pro/ProKeys.kt`.
+1. `java tools/KeyTool.java init` (one time). Keep `mido-private.key` secret and backed up. Add the printed public key to `local.properties` as `PRO_PUBLIC_KEY=...` (one line; it survives unzipping new versions), then rebuild.
 2. `java tools/KeyTool.java make "Customer Name"` prints a key to send them. `check <key>` verifies one.

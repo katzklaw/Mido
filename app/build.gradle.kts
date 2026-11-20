@@ -21,10 +21,12 @@ android {
         applicationId = "app.mido"
         minSdk = 26
         targetSdk = 35
-        versionCode = 22
-        versionName = "0.11.6"
+        versionCode = 23
+        versionName = "0.11.7"
         // Developer switch: PRO_UNLOCKED=true in local.properties unlocks every Pro feature in your own build.
         buildConfigField("boolean", "PRO_UNLOCKED", localProps.getProperty("PRO_UNLOCKED", "false").trim().lowercase().let { if (it == "true") "true" else "false" })
+        // Your licence public key (printed by `java tools/KeyTool.java init`). Kept here so a new project zip never overwrites it.
+        buildConfigField("String", "PRO_PUBLIC_KEY", "\"${localProps.getProperty("PRO_PUBLIC_KEY", "").filter { !it.isWhitespace() }}\"")
         buildConfigField("String", "MAPS_API_KEY", "\"${localProps.getProperty("MAPS_API_KEY", "")}\"")
     }
 
